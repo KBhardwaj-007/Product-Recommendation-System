@@ -2,7 +2,7 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/KBhardwaj-007/Product-Recommendation-System/blob/main/Product_Recommendation_System.ipynb)
 
-A comprehensive end-to-end machine learning project that builds a hybrid recommendation system for video games, combining collaborative filtering, content-based filtering, and popularity-based approaches. The project includes sentiment analysis of reviews and features an interactive Streamlit web application.
+A comprehensive, end-to-end machine learning project that deploys a **SVD-Powered User-to-Item Personalized Hybrid Recommender** for video games. It predicts explicit user ratings using advanced matrix factorization, moving beyond simple item similarity to deliver unparalleled personalization. The entire pipeline, from MongoDB data ingestion to a production-ready Streamlit web app, is implemented for maximum efficiency and real-world impact.
 
 ---
 
@@ -25,27 +25,27 @@ A comprehensive end-to-end machine learning project that builds a hybrid recomme
 
 ## 🎯 Overview
 
-In the competitive e-commerce landscape, personalized recommendations are crucial for user engagement and sales. This project develops a sophisticated hybrid recommendation system for video games using 230,000+ Amazon reviews. The system combines multiple recommendation strategies to provide accurate, diverse, and personalized suggestions.
+In the highly competitive e-commerce landscape, personalized recommendations are the core engine for driving conversions. This project solves the personalization challenge by developing a sophisticated **Dual-Hybrid Recommendation System** for video games using 230,000+ Amazon reviews. The system's flagship feature is the **User-to-Item Personalized Recommender**, which uses the highly accurate SVD algorithm to predict exactly what a specific user will love.
 
 ### Key Objectives
 
-1. Build multiple recommendation models (baseline, collaborative, content-based, hybrid)
-2. Perform sentiment analysis on review text using ML classifiers
-3. Compare and evaluate different algorithms
-4. Deploy an interactive web application for real-time recommendations
+1. **Build a Personalized User-to-Item Model** using the optimal SVD Matrix Factorization algorithm.
+2. Develop a **Dual-Hybrid Model** combining SVD prediction, content-based features, and popularity for robust suggestions.
+3. Establish a fast data pipeline from MongoDB to a trained, serialized model (`.joblib`) for near-instantaneous inference.
+4. Perform accurate sentiment analysis on review text using ML classifiers (LightGBM, XGBoost).
+5. **Deploy an interactive Streamlit application** showcasing both Personalized and Item-to-Item results.
 
 ---
 
 ## ✨ Key Features
 
-- **Hybrid Recommendation Engine**: Combines popularity, collaborative filtering, and content-based approaches
-- **Sentiment Analysis**: Classifies review sentiment using RandomForest, XGBoost, and LightGBM
-- **Matrix Factorization**: Evaluates SVD, BaselineOnly, and NMF algorithms
-- **Interactive Web App**: Streamlit-based UI for generating recommendations
-- **Comprehensive EDA**: Visualizations and insights from 230,000+ reviews
-- **Modular Architecture**: Clean, reusable code structure
-- **Database Integration**: MongoDB for scalable data storage
-- **Performance Optimization**: Pre-computed similarity matrices for fast inference
+- **SVD-Powered Personalized Recommender**: Predicts explicit ratings for unrated products based on individual user latent factors.
+- **Dual-Hybrid Engine**: Offers two modes: **Personalized** (User-to-Item) for engagement and **Item-to-Item** for product similarity.
+- **Matrix Factorization Optimality**: SVD demonstrated superior accuracy (RMSE: 1.0823) with fast training time (Avg. 2.72s).
+- **Sentiment Analysis**: Classifies review sentiment with high-accuracy models (LightGBM F1-Score $\approx$ 0.90).
+- **Fast Inference**: All matrices and the SVD model are pre-computed and saved for near-real-time performance in the web application.
+- **Interactive Web App (3 Pages)**: Streamlit-based UI for real-time recommendation generation.
+- **Modular Architecture**: Clean separation of concerns (`mongo_connection`, `hybrid_personalized`, etc.) for scalability.
 
 ---
 
@@ -56,24 +56,27 @@ Product_Recommendation/
 │
 ├── data/
 │   ├── video_games_reviews.csv          # Raw dataset
-│   ├── cleaned_reviews.joblib            # Processed data
-│   ├── cf_sim_df.joblib                  # Collaborative filtering matrix
-│   ├── tfidf_matrix.joblib               # Content-based TF-IDF matrix
-│   └── ml_results.joblib                 # ML model results
+│   ├── cleaned_reviews.joblib           # Processed data
+│   ├── svd_model.joblib                 # 🌟 TRAINED SVD USER-TO-ITEM MODEL
+│   ├── all_products.joblib              # List of all ASINs (for SVD prediction)
+│   ├── cf_sim_df.joblib                 # Item-to-Item CF similarity matrix
+│   ├── tfidf_matrix.joblib              # Content-based TF-IDF matrix
+│   └── ml_results.joblib                # ML model results & metrics
 │
 ├── src/
-│   ├── logger_config.py                  # Custom logging utility
-│   ├── mongo_connection.py               # MongoDB operations
-│   ├── data_preprocessing.py             # Data cleaning pipeline
-│   ├── baseline.py                       # Popularity-based models
-│   ├── collaborative.py                  # Collaborative filtering
-│   ├── content_based.py                  # Content-based filtering
-│   ├── hybrid.py                         # Standard hybrid recommender
-│   ├── hybrid_fast.py                    # Optimized hybrid recommender
-│   └── ml_models.py                      # Sentiment classification models
+│   ├── logger_config.py
+│   ├── mongo_connection.py
+│   ├── data_preprocessing.py
+│   ├── baseline.py
+│   ├── collaborative.py
+│   ├── content_based.py
+│   ├── hybrid.py
+│   ├── hybrid_fast.py                   # Item-to-Item Hybrid Logic
+│   └── hybrid_personalized.py           # 🌟 USER-TO-ITEM HYBRID LOGIC
+│   └── ml_models.py
 │
 ├── app/
-│   └── streamlit_app.py                  # Web application
+│   └── streamlit_app.py                 # Web application (3 Pages)
 │
 ├── notebooks/
 │   └── Product_Recommendation_System.ipynb  # Main notebook
@@ -86,7 +89,7 @@ Product_Recommendation/
 ## 📊 Dataset
 
 **Source**: Amazon Video Game Reviews  
-**Size**: 230,000+ entries  
+**Size**: 231,780 entries  
 **Time Period**: 2000-2014
 
 ### Features
@@ -107,8 +110,8 @@ Product_Recommendation/
 
 - `helpful_ratio`: Proportion of helpful votes
 - `helpful_votes`: Total helpful votes received
-- `label`: Binary sentiment (1=positive, 0=negative)
-- `reviewTime`: Converted datetime format
+- `label`: Binary sentiment (1=positive: $\ge 4$, 0=negative: $<4$)
+- `reviewTime`: Standardized datetime format
 
 ---
 
@@ -117,77 +120,52 @@ Product_Recommendation/
 ### 1. Data Pipeline
 
 ```python
-Raw Data → MongoDB → Preprocessing → Feature Engineering → Model Training → Deployment
+Raw Data → MongoDB → Preprocessing → Feature Engineering → Model Training → Serialization (.joblib) → Deployment
 ```
 
-**Preprocessing Steps**:
-- Remove duplicates
-- Handle missing values
-- Parse helpful votes
-- Convert timestamps
-- Create sentiment labels
+**Key Steps**: Data cleaning, parsing `helpful` votes, and creating a binary sentiment target `label`.
 
-### 2. Recommendation Models
+### 2. Recommendation Models (Core Logic)
 
-#### Baseline Models
-- **Popularity-Based**: Ranks by review count
-- **Weighted Popularity**: Ranks by helpful votes
-- **Simple Item Similarity**: Co-occurrence based recommendations
+#### Personalized User-to-Item Hybrid
+- **Model:** $\text{SVD Prediction} \times \mathbf{\alpha} + \text{Popularity Score} \times \mathbf{\beta} + \text{Content Score} \times \mathbf{\gamma}$
+- **CF Core:** **SVD Matrix Factorization** predicts the user's rating for unrated items.
+- **Content-Based:** Item similarity calculated based on the user's **highest-rated game**.
+- **Weights:** Optimized as $\mathbf{\alpha=0.5}$ (SVD Prediction), $\mathbf{\beta=0.3}$ (Popularity), $\mathbf{\gamma=0.2}$ (Content).
 
-#### Collaborative Filtering
-- **Item-Item CF**: Cosine similarity on user-item ratings matrix
-- **Matrix Factorization**: SVD, BaselineOnly, NMF using Surprise library
-
-#### Content-Based Filtering
-- **TF-IDF Vectorization**: Analyzes review text similarity
-- **Linear Kernel**: Fast cosine similarity computation
-
-#### Hybrid Approach
-- **Weighted Ensemble**: Combines all three approaches
-- **Configurable Weights**: α=0.4 (popularity), β=0.3 (collaborative), γ=0.3 (content)
+#### Benchmarking & Item-to-Item Models
+- **SVD, BaselineOnly, NMF**: Evaluated using **RMSE** and **MAE** to select the optimal algorithm for the personalized model.
+- **Item-to-Item Hybrid**: A faster fallback model using item similarity on pre-computed matrices.
 
 ### 3. Sentiment Analysis
 
-**Models Trained**:
-- RandomForest Classifier
-- XGBoost Classifier
-- LightGBM Classifier
-
-**Evaluation Metrics**:
-- Accuracy, Precision, Recall, F1-Score, ROC AUC
+**Models Trained**: RandomForest, XGBoost, LightGBM (using TF-IDF on `reviewText`)
+**Evaluation Metrics**: Accuracy, Precision, Recall, F1-Score, ROC AUC
+**Goal**: Validate review sentiment to provide granular market intelligence alongside recommendations.
 
 ---
 
 ## 📈 Results & Insights
 
-### Recommendation Performance
+### Collaborative Filtering Performance (Matrix Factorization)
 
-| Algorithm | RMSE | MAE | Training Time |
-|-----------|------|-----|---------------|
-| **SVD** | 1.0854 | 0.8368 | ~8.3s |
-| **BaselineOnly** | 1.0879 | 0.8480 | ~1.68s |
-| **NMF** | 1.2753 | 0.9811 | ~9.48s |
+| Algorithm | Mean RMSE (Error) | Mean MAE (Error) | Mean Fit Time |
+|-----------|-------------------|------------------|---------------|
+| **SVD** | **1.0823** | **0.8344** | $\\approx$ **2.72s** |
+| **BaselineOnly** | 1.0875 | 0.8473 | $\\approx$ 1.10s |
+| **NMF** | 1.2749 | 0.9809 | $\\approx$ 6.64s |
 
-**Winner**: SVD offers best accuracy; BaselineOnly provides excellent speed-accuracy tradeoff.
+**Conclusion**: **SVD** is the optimal model, providing the lowest predictive error with superior efficiency compared to NMF.
 
 ### Sentiment Classification Performance
 
 | Model | Accuracy | Precision | Recall | F1-Score | ROC AUC |
 |-------|----------|-----------|--------|----------|---------|
-| **LightGBM** | 0.843 | 0.853 | 0.955 | 0.901 | 0.868 |
-| **XGBoost** | 0.842 | 0.851 | 0.955 | 0.900 | 0.867 |
-| **RandomForest** | 0.828 | 0.831 | 0.978 | 0.898 | 0.861 |
+| **LightGBM** | **0.840** | **0.851** | 0.955 | **0.900** | **0.874** |
+| **XGBoost** | 0.838 | 0.847 | 0.959 | 0.899 | 0.872 |
+| **RandomForest** | 0.822 | 0.822 | **0.977** | 0.892 | 0.860 |
 
-**Winner**: LightGBM marginally outperforms others; RandomForest has highest recall.
-
-### Key Findings
-
-1. **Review Distribution**: 58% 5-star, 27% 4-star → Highly positive sentiment
-2. **Helpfulness Pattern**: Bimodal distribution (0.0 and 1.0 peaks)
-3. **Growth Trend**: Exponential growth in reviews from 2012-2014
-4. **Top Products**: Product `B00BGA9WK2` has 800+ reviews
-5. **Power Users**: Top reviewer contributed 780+ reviews
-6. **Common Themes**: "Great", "Good", "Best", "Awesome" dominate review summaries
+**Conclusion**: LightGBM is the top-performing classifier. The high **Recall** for the positive class ($\approx$ 95.5%) suggests the models are excellent at identifying positive reviews but struggle slightly more with the less frequent negative class (due to data imbalance).
 
 ---
 
@@ -204,18 +182,15 @@ Google Colab (recommended) or Jupyter Notebook
 ### Setup
 
 1. **Clone the repository**
-
 ```bash
 git clone https://github.com/KBhardwaj-007/Product-Recommendation-System.git
 cd Product-Recommendation-System
 ```
 
 2. **Install dependencies**
-
 ```bash
 pip install -r requirements.txt
 ```
-
 Required packages:
 ```
 pandas
@@ -250,16 +225,15 @@ Place `video_games_reviews.csv` in the `data/` directory.
 
 ### Running the Notebook
 
-1. Open `Product_Recommendation_System.ipynb` in Google Colab
-2. Mount Google Drive
-3. Run cells sequentially to:
-   - Load and preprocess data
-   - Train recommendation models
-   - Perform EDA
-   - Generate visualizations
-   - Export artifacts
+Open `Product_Recommendation_System.ipynb` in Google Colab and run all cells. The pipeline automatically:
+1.  Loads data into MongoDB.
+2.  Preprocesses data.
+3.  Trains and serializes the final **SVD model** and all necessary matrices.
+4.  Generates and displays comparison results for all models.
 
 ### Launching the Web App
+
+The final notebook cells deploy the application via Streamlit and expose it via a public ngrok URL.
 
 ```python
 # In the notebook, execute:
@@ -271,19 +245,11 @@ public_url = ngrok.connect(addr="8501")
 print(f"🎉 App live at: {public_url}")
 ```
 
-### Using the Streamlit App
+### Using the Streamlit App (3 Pages)
 
-1. **Hybrid Recommender Page**:
-   - Select a game by Product ID
-   - Choose number of recommendations (5-15)
-   - Click "Get Recommendations"
-   - View personalized suggestions with review samples
-
-2. **Model Performance Page**:
-   - Click "Re-run Models"
-   - View performance metrics table
-   - Analyze heatmaps and confusion matrix
-   - Compare model effectiveness
+1.  **👤 Personalized Recommender**: Select a **User ID** to receive a ranked list of games predicted to be rated $\mathbf{\ge 4.5}$ stars by that specific user.
+2.  **🔗 Item-to-Item Recommender**: Select a **Product ID** to find similar games based on combined user behavior and review content.
+3.  **📊 Model Performance**: View and analyze all classification and collaborative filtering results, heatmaps, and the Confusion Matrix.
 
 ---
 
@@ -363,54 +329,41 @@ print(f"🎉 App live at: {public_url}")
 
 ## 💼 Business Recommendations
 
-### 1. 🎯 Integrate Hybrid Recommender
+### 1. 🥇 Maximize Sales with SVD Personalization
 
-**Action**: Embed the recommendation engine on product pages in "You Might Also Like" sections.
+**Action**: **Immediately deploy the SVD-Powered Personalized Hybrid Model (User-to-Item)** for real-time inference on the homepage, checkout, and email campaigns.
 
-**Impact**: 
-- Increase product discovery by 25-40%
-- Boost cross-sales and average order value
-- Improve user engagement time
+**Impact**: Maximize revenue by showing each user the few items they are **most likely to purchase** (based on predicted high rating), leading to conversion rates significantly higher than generic top-seller lists.
 
-### 2. 📧 Personalized Marketing
+### 2. 🛡️ Implement a Dynamic Cold-Start Strategy
 
-**Action**: Use recommendations to generate targeted email campaigns based on user preferences.
+**Action**: Use a conditional system:
+- **New Users ($\le 1$ review)**: Default to the `weighted_popularity_based` model.
+- **New Items (No reviews)**: Use the **Content-Based** module based on product description/metadata.
+- **Active Users**: Use the SVD-powered Personalized Hybrid.
 
-**Impact**:
-- Higher conversion rates (15-30% improvement)
-- Reduced cart abandonment
-- Enhanced customer loyalty
+**Impact**: Guarantees a relevant recommendation experience from the first interaction, retaining new users who lack history.
 
-### 3. 📊 Real-Time Sentiment Monitoring
+### 3. 💸 Trigger High-Confidence Bundling
 
-**Action**: Apply sentiment model to new reviews; create dashboards for product managers.
+**Action**: Use the SVD prediction score as a campaign trigger. If a user's predicted rating for a new or high-margin game is **$\mathbf{\ge 4.5}$**, automatically create and send a targeted bundle offer.
 
-**Impact**:
-- Rapid response to negative feedback
-- Data-driven inventory decisions
-- Early detection of product issues
+**Impact**: Converts high-confidence intent into higher-value sales, improving Average Order Value (AOV).
 
-### 4. 🏆 Optimize Inventory Strategy
+### 4. 📉 Real-Time Sentiment & Inventory
 
-**Action**: Feature games with high helpful votes prominently; adjust stock based on weighted popularity.
+**Action**: Apply the trained LightGBM model to incoming reviews in real-time. Create an alert system for any product whose **Negative sentiment exceeds a 20% threshold** for quick review and potential inventory adjustment.
 
-**Impact**:
-- Maximize revenue from top-rated products
-- Reduce dead stock
-- Better promotional campaign ROI
+**Impact**: Provides early warning for product issues, mitigating financial risk and protecting brand reputation.
 
 ---
 
 ## 🔮 Future Enhancements
 
-- [ ] **Deep Learning Models**: Implement neural collaborative filtering and transformer-based recommendations
-- [ ] **Multi-Modal Recommendations**: Incorporate game images, metadata, and user demographics
-- [ ] **Cold Start Solutions**: Hybrid content-based + knowledge-based approaches for new products
-- [ ] **Real-Time Updates**: Stream processing for live recommendation updates
-- [ ] **A/B Testing Framework**: Compare recommendation strategies with live traffic
-- [ ] **Explainable AI**: Add interpretability features to show why items were recommended
-- [ ] **Mobile App**: Develop native mobile application
-- [ ] **Scalability**: Deploy on cloud infrastructure (AWS/GCP) with containerization
+- [ ] **Real-Time Retraining Pipeline**: Automate the SVD model re-training nightly using new data on a scalable cloud resource (e.g., AWS Lambda/GCP Cloud Functions).
+- [ ] **A/B Test Integration**: Build a logging framework to compare conversion rates between the old Item-to-Item and the new Personalized Hybrid model in a live environment.
+- [ ] **Multi-Modal Features**: Integrate game metadata (e.g., Genre, Developer, Release Year) into the SVD feature matrix for deeper latent factor modeling.
+- [ ] **Mobile Optimization**: Deploy a lighter-weight, mobile-friendly Streamlit interface.
 
 <p align="center">
   <strong>⭐ If you found this project useful, please consider giving it a star! ⭐</strong>
